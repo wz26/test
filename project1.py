@@ -1,18 +1,18 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[28]:
 
 import numpy as np
 
 
-# In[3]:
+# In[29]:
 
 #B matrix is an 12-by-12 matrix to find parameter value
 B = np.zeros((12,12), dtype=int)
 
 
-# In[4]:
+# In[30]:
 
 #this  six points are used to obtain the intrinsics and extrinsics
 xw1, yw1, zw1, x1, y1 = 6, 0, 2, 793, 884
@@ -23,7 +23,7 @@ xw5, yw5, zw5, x5, y5 = 6, 0, 0, 793, 950
 xw6, yw6, zw6, x6, y6 = 0, 6, 0, 1080, 948
 
 
-# In[5]:
+# In[31]:
 
 #create matrix B
 B[0] = [xw1, yw1, zw1, 1, 0, 0, 0, 0, -x1*xw1, -x1*yw1, -x1*zw1, -x1]
@@ -40,57 +40,52 @@ B[10] = [xw6, yw6, zw6, 1, 0, 0, 0, 0, -x6*xw6, -x6*yw6, -x6*zw6, -x6]
 B[11] = [0, 0, 0, 0, xw6, yw6, zw6, 1, -y6*xw6, -y6*yw6, -y6*zw6, -y6]
 
 
-# In[6]:
+# In[32]:
 
 #do svd and get the last column of vh.T to obtain projection matrix
 u, s, vh = np.linalg.svd(B, full_matrices=True)
 vh = vh.T
 p = vh[:,11]
 p = p.reshape(3, 4)
-p
 
 
-# In[7]:
+# In[33]:
 
 #extract left and right part of projection matrix
 right = p[:, 3]
 left = p[:, [0,1,2]]
-left
 
 
-# In[8]:
+# In[34]:
 
 #normalizing the projection matrix
 temp = left[2, :]
 temp
 norm = np.sum(temp[0]**2 + temp[1]**2 + temp[2]**2)
-norm
+norm = np.sqrt(norm)
 p = p/norm
 right = p[:, 3]
 left = p[:, [0,1,2]]
-p
 
 
-# In[9]:
+# In[35]:
 
 #compute the matrix A to recover intrinsics
 A = np.matmul(left, left.transpose())
 A = A/A[2,2]
-A
 
 
-# In[10]:
+# In[36]:
 
 # recovering the intrinsics
 u0 = A[0,2]
 v0 = A[1,2]
 beta = np.sqrt(A[1,1]-np.square(v0))
-s = 0
+s=0
 alfa = np.sqrt(A[0,0]-np.square(u0)-np.square(s))
-s
 
 
-# In[11]:
+# In[37]:
 
 #recovering the extrinsics
 K = np.matrix([[alfa, s, u0],[0, beta, v0],[0, 0, 1]])
@@ -100,15 +95,14 @@ t = np.matmul(Kinverse, right)
 RT = np.concatenate((R, t.T), axis=1)
 
 
-# In[12]:
+# In[38]:
 
-#now begin to verify, firsly pick one points
+#now begin to verify, firsly pick a points previously used to verify
 #xw1, yw1, zw1, x1, y1 = 6, 0, 2, 793, 884
 X1 = np.array([10, 0, 6, 1]);
 x1 = np.matmul(K, RT)
 x1 = np.matmul(x1, X1.T)
 x1 = x1/x1[0,2]
-x1
 
 #create an array of 8 points to verify
 verify = np.zeros((8,5), dtype=int)
@@ -121,11 +115,9 @@ verify[4] = [518 , 445, 16, 0 , 14]
 verify[5] = [740 , 471, 8 , 0 , 14]
 verify[6] = [795 , 748, 6 , 0 , 6 ]
 verify[7] = [688 , 742, 10, 0 , 6 ]
-#verify
-x1
 
 
-# In[18]:
+# In[43]:
 
 #use eight points to verify 
 dist = 0
@@ -134,25 +126,26 @@ for i in range(0, 8):
     X = np.array([verify[i,2], verify[i,3], verify[i,4], 1])
     x = np.matmul(K, RT)
     x = np.matmul(x, X.T)
-    x = x/x[0,2]
-    #temp = x[0, 0] - verify[i,0]
+    x = x/x[0, 2]
     temp = 0
     temp += np.square(x[0, 0] - verify[i,0])
-    #temp = x[0, 1] - verify[i,1]
     temp += np.square(x[0, 1] - verify[i,1])
     dist += np.sqrt(temp)
-    #result[i, 0] = x[0,0]
-    #result[i, 1] = x[0,1]
-    #print(x)
-    
+
 result
 dist /= 8      
 dist
 
-print("The average error distance is %.2f \n"%(dist))
+print("The average error distance is: %.2f"%(dist))
+print("The extrisinc matrix K is: ")
+print(np.matrix(K))
+print("The rotation matrix R is: ")
+print(R)
+print("The transportation matrix t is: ")
+print(t)
 
 
-# In[14]:
+# In[ ]:
 
 
 
